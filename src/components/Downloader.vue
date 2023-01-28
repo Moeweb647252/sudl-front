@@ -1,91 +1,86 @@
-<script>
-import { reactive, ref } from "vue";
+<script setup>
+import { reactive, ref,onMounted } from "vue";
 import jsmd5 from "js-md5";
+import axios  from  'axios'
+import { salt } from "./salt";
+const dlFormRef = ref();
+const dlForm = reactive({
+  url: "",
+  cookies: "",
+  data: "",
+  method: "GET",
+  headers:
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+  dlserver: "",
+});
+function getTimeStamp(){
+  return Date.parse(new Date()).toString().slice(0,-3);
+}
+const dlservers = ref({});
 
-export default {
-  setup() {
-    const dlFormRef = ref();
-    const dlForm = reactive({
-      url: "",
-      cookies: "",
-      data: "",
-      method: "GET",
-      headers:
-        "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-      dlserver: "//dls1.nekoit.org",
-    });
-    const salt = "salt";
-    function getTimeStamp(){
-      return Date.parse(new Date()).toString().slice(0,-3);
+const rules = reactive({
+  url: [
+    {
+      required: true,
+      message: "请输入下载地址",
+    },
+    {
+      pattern: new RegExp(
+        "(https?)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]"
+      ),
+      message: "请输入正确的下载地址",
+    },
+  ],
+  method: [
+    {
+      required: true,
+      message: "请选择请求方法",
+    },
+  ],
+  dlserver: [
+  {
+      required: true,
+      message: "请选择线路",
+    },
+  ]
+});
+
+const onSubmit = async (formRef) => {
+  await formRef.validate((valid, fields) => {
+    if (valid) {
+      const tmp = document.createElement("a");
+      tmp.setAttribute("class", "display: none;");
+      tmp.setAttribute(
+        "href",
+        dlForm.dlserver +
+          "/download?url=" +
+          dlForm.url +
+          "&method=" +
+          dlForm.method +
+          "&data=" +
+          dlForm.data.replace(/\n/g, "%0A") +
+          "&cookies=" +
+          dlForm.cookies +
+          "&headers=" +
+          dlForm.headers.replace(/\n/g, "%0A") +
+          "&sign=" +
+          jsmd5(
+            salt +
+            getTimeStamp().slice(0,-3)
+          )
+      );
+      tmp.setAttribute("download", "download");
+      tmp.setAttribute("target", "_blank");
+      tmp.click();
     }
-    const dlservers = reactive({
-      线路1: "//dls1.nekoit.org",
-      "线路2(CloudFlare)": "//dls2.nekoit.org",
-      线路3: "//dls3.nekoit.org",
-      测试线路: "//127.0.0.1:5000",
-    });
-
-    const rules = reactive({
-      url: [
-        {
-          required: true,
-          message: "请输入下载地址",
-        },
-        {
-          pattern: new RegExp(
-            "(https?)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]"
-          ),
-          message: "请输入正确的下载地址",
-        },
-      ],
-      method: [
-        {
-          required: true,
-          message: "请选择请求方法",
-        },
-      ],
-    });
-
-    const onSubmit = async (formRef) => {
-      await formRef.validate((valid, fields) => {
-        if (valid) {
-          const tmp = document.createElement("a");
-          tmp.setAttribute("class", "display: none;");
-          tmp.setAttribute(
-            "href",
-            dlForm.dlserver +
-              "/download?url=" +
-              dlForm.url +
-              "&method=" +
-              dlForm.method +
-              "&data=" +
-              dlForm.data.replace(/\n/g, "%0A") +
-              "&cookies=" +
-              dlForm.cookies +
-              "&headers=" +
-              dlForm.headers.replace(/\n/g, "%0A") +
-              "&sign=" +
-              jsmd5(
-                salt +
-                getTimeStamp().slice(0,-3)
-              )
-          );
-          tmp.setAttribute("download", "download");
-          tmp.setAttribute("target", "_blank");
-          tmp.click();
-        }
-      });
-    };
-
-    return {
-      dlForm,
-      rules,
-      onSubmit,
-      dlFormRef,
-      dlservers,
-    };
-  },
+  });
 };
+onMounted(()=> {
+  console.log("a")
+  axios.get("/dlservers.json").then((res) => {
+    dlservers.value = res.data;
+  });
+});
 </script>
 
 <template>
@@ -120,7 +115,7 @@ export default {
       <el-form-item label="请求头">
         <el-input v-model="dlForm.headers" type="textarea" />
       </el-form-item>
-      <el-form-item label="线路" size="normal">
+      <el-form-item label="线路" size="normal" prop="dlserver">
         <el-select v-model="dlForm.dlserver">
           <el-option
             v-for="(item, key) in dlservers"

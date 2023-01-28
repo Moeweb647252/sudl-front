@@ -1,0 +1,8 @@
+[
+  {
+    "id": 1,
+    "title": "无法下载？",
+    "content":
+      "请将完整的URL，请求头（headers），post数据（data）复制到文本框中。<br />headers：在你要下载的文件的下载页面按F12，在弹出的开发者工具中按顶栏的Network/网络，然后单击下载按钮，这时，Network/网络中就会多出一个请求，双击目标请求，就可以看到headers(请求标头，request headers),和post数据(查询字符/payload)"
+  }
+]
